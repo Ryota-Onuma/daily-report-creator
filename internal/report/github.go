@@ -437,7 +437,7 @@ func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, e
 		}
 
 		var rawComment struct {
-			ID     int `json:"id"`
+			ID     string `json:"id"`
 			Author struct {
 				Login string `json:"login"`
 			} `json:"author"`
@@ -488,7 +488,7 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 		}
 
 		var rawComment struct {
-			ID   int `json:"id"`
+			ID   string `json:"id"`
 			User struct {
 				Login string `json:"login"`
 			} `json:"user"`
