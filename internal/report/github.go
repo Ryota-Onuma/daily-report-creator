@@ -61,7 +61,7 @@ type PRDiff struct {
 }
 
 type Comment struct {
-	ID        int    `json:"id"`
+	ID        string `json:"id"`
 	Author    string `json:"author"`
 	Body      string `json:"body"`
 	CreatedAt string `json:"created_at"`
@@ -70,7 +70,7 @@ type Comment struct {
 }
 
 type ReviewComment struct {
-	ID        int    `json:"id"`
+	ID        string `json:"id"`
 	Author    string `json:"author"`
 	Body      string `json:"body"`
 	Path      string `json:"path"`
