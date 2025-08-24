@@ -61,7 +61,7 @@ type PRDiff struct {
 }
 
 type Comment struct {
-	ID        string `json:"id"`
+	ID        int    `json:"id"`
 	Author    string `json:"author"`
 	Body      string `json:"body"`
 	CreatedAt string `json:"created_at"`
@@ -70,7 +70,7 @@ type Comment struct {
 }
 
 type ReviewComment struct {
-	ID        string `json:"id"`
+	ID        int    `json:"id"`
 	Author    string `json:"author"`
 	Body      string `json:"body"`
 	Path      string `json:"path"`
@@ -437,7 +437,7 @@ func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, e
 		}
 
 		var rawComment struct {
-			ID     string `json:"id"`
+			ID     int `json:"id"`
 			Author struct {
 				Login string `json:"login"`
 			} `json:"author"`
@@ -488,7 +488,7 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 		}
 
 		var rawComment struct {
-			ID   string `json:"id"`
+			ID   int `json:"id"`
 			User struct {
 				Login string `json:"login"`
 			} `json:"user"`
