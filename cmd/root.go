@@ -27,12 +27,12 @@ func init() {
 }
 
 type Command struct {
-	Name      string
-	Short     string
-	Long      string
-	Run       func(cmd *Command, args []string) error
-	Commands  []*Command
-	parent    *Command
+	Name     string
+	Short    string
+	Long     string
+	Run      func(cmd *Command, args []string) error
+	Commands []*Command
+	parent   *Command
 }
 
 func (c *Command) AddCommand(cmd *Command) {
@@ -49,7 +49,7 @@ func (c *Command) Execute(args []string) error {
 	}
 
 	subcommandName := args[0]
-	
+
 	for _, subcmd := range c.Commands {
 		if subcmd.Name == subcommandName {
 			return subcmd.Execute(args[1:])
@@ -70,7 +70,7 @@ func (c *Command) Execute(args []string) error {
 
 func (c *Command) Help() error {
 	fmt.Printf("%s\n\n", c.Short)
-	
+
 	if c.Long != "" {
 		fmt.Printf("%s\n\n", c.Long)
 	}

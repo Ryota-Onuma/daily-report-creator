@@ -18,7 +18,7 @@ var integrateManualCmd = &Command{
 		}
 
 		fmt.Printf("Integrating manual work for %s...\n", date)
-		
+
 		if err := report.IntegrateManualWork(date); err != nil {
 			return fmt.Errorf("failed to integrate manual work: %v", err)
 		}

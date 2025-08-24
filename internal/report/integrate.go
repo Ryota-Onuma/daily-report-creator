@@ -28,7 +28,7 @@ func IntegrateManualWork(date string) error {
 	}
 
 	updatedContent := integrateManualWorkContent(string(content), manualWork)
-	
+
 	err = os.WriteFile(reportPath, []byte(updatedContent), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write updated report: %v", err)
@@ -58,7 +58,7 @@ func extractManualWork(content string) []string {
 	// Extract content between <!-- and --> in the "その他の作業" section
 	commentRegex := regexp.MustCompile(`<!--\s*(.*?)\s*-->`)
 	matches := commentRegex.FindAllStringSubmatch(content, -1)
-	
+
 	var manualWork []string
 	for _, match := range matches {
 		if len(match) > 1 {
@@ -72,7 +72,7 @@ func extractManualWork(content string) []string {
 			}
 		}
 	}
-	
+
 	return manualWork
 }
 

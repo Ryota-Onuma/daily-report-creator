@@ -39,7 +39,7 @@ Uses today's date if no date is provided.`,
 			return fmt.Errorf("failed to create template: %v", err)
 		}
 
-		// Step 2: Fetch GitHub activity  
+		// Step 2: Fetch GitHub activity
 		fmt.Println("2. Fetching GitHub activity...")
 		collector := report.NewGitHubCollector(".")
 		if len(args) > 0 {
@@ -66,12 +66,12 @@ Uses today's date if no date is provided.`,
 		}
 
 		fmt.Printf("✅ Comprehensive daily report generated for %s\n", date)
-		fmt.Printf("📁 Report location: reports/%s/%s/daily-report.md\n", 
+		fmt.Printf("📁 Report location: reports/%s/%s/daily-report.md\n",
 			date[:4], date)
 		fmt.Println("\n💡 To add manual work:")
 		fmt.Println("   1. Edit the report file and add content in the comment section")
 		fmt.Printf("   2. Run: go run main.go integrate-manual %s\n", date)
-		
+
 		return nil
 	},
 }

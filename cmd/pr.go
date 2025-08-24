@@ -45,14 +45,14 @@ type PRMetadata struct {
 }
 
 type PRAnalysis struct {
-	Metadata           PRMetadata
-	Description        string
-	DiffPatch          string
-	TechnicalAnalysis  TechnicalAnalysis
-	BusinessImpact     BusinessImpact
-	LearningPoints     []string
-	ReviewComments     []string
-	ActionItems        []string
+	Metadata          PRMetadata
+	Description       string
+	DiffPatch         string
+	TechnicalAnalysis TechnicalAnalysis
+	BusinessImpact    BusinessImpact
+	LearningPoints    []string
+	ReviewComments    []string
+	ActionItems       []string
 }
 
 type TechnicalAnalysis struct {
@@ -66,11 +66,11 @@ type TechnicalAnalysis struct {
 }
 
 type BusinessImpact struct {
-	FeatureCategory    string
-	UserImpact         string
-	MaintenanceImpact  string
-	PerformanceImpact  string
-	SecurityImpact     string
+	FeatureCategory   string
+	UserImpact        string
+	MaintenanceImpact string
+	PerformanceImpact string
+	SecurityImpact    string
 }
 
 func NewPRAnalyzer(basePath string) *PRAnalyzer {
@@ -166,7 +166,7 @@ func (p *PRAnalyzer) loadMetadata(path string, metadata *PRMetadata) error {
 
 func (p *PRAnalyzer) analyzeTechnical(diffPatch string) TechnicalAnalysis {
 	analysis := TechnicalAnalysis{}
-	
+
 	if diffPatch == "" {
 		return analysis
 	}
@@ -209,10 +209,10 @@ func (p *PRAnalyzer) analyzeTechnical(diffPatch string) TechnicalAnalysis {
 
 	// Analyze architectural notes
 	analysis.ArchitecturalNotes = p.extractArchitecturalNotes(diffPatch)
-	
+
 	// Analyze code quality
 	analysis.CodeQuality = p.analyzeCodeQuality(diffPatch)
-	
+
 	// Analyze test coverage
 	analysis.TestCoverage = p.analyzeTestCoverage(diffPatch)
 
@@ -221,7 +221,7 @@ func (p *PRAnalyzer) analyzeTechnical(diffPatch string) TechnicalAnalysis {
 
 func (p *PRAnalyzer) extractArchitecturalNotes(diffPatch string) []string {
 	notes := []string{}
-	
+
 	if strings.Contains(diffPatch, "package main") {
 		notes = append(notes, "New main package created - entry point implementation")
 	}
@@ -249,7 +249,7 @@ func (p *PRAnalyzer) extractArchitecturalNotes(diffPatch string) []string {
 
 func (p *PRAnalyzer) analyzeCodeQuality(diffPatch string) []string {
 	quality := []string{}
-	
+
 	if strings.Contains(diffPatch, "fmt.Errorf") {
 		quality = append(quality, "✅ Proper error wrapping with context")
 	}
@@ -275,7 +275,7 @@ func (p *PRAnalyzer) analyzeCodeQuality(diffPatch string) []string {
 func (p *PRAnalyzer) analyzeTestCoverage(diffPatch string) string {
 	hasTests := strings.Contains(diffPatch, "_test.go")
 	hasMainCode := strings.Contains(diffPatch, ".go") && !strings.Contains(diffPatch, "_test.go")
-	
+
 	if hasTests && hasMainCode {
 		return "Good - Tests included with implementation"
 	} else if hasTests {
@@ -283,17 +283,17 @@ func (p *PRAnalyzer) analyzeTestCoverage(diffPatch string) string {
 	} else if hasMainCode {
 		return "⚠️ No tests found - consider adding test coverage"
 	}
-	
+
 	return "Unknown"
 }
 
 func (p *PRAnalyzer) analyzeBusinessImpact(metadata PRMetadata, description, diffPatch string) BusinessImpact {
 	impact := BusinessImpact{}
-	
+
 	// Determine feature category from title and description
 	title := strings.ToLower(metadata.Title)
 	desc := strings.ToLower(description)
-	
+
 	if strings.Contains(title, "feat") || strings.Contains(desc, "add") {
 		impact.FeatureCategory = "New Feature"
 		impact.UserImpact = "Positive - New functionality added"
@@ -334,7 +334,7 @@ func (p *PRAnalyzer) analyzeBusinessImpact(metadata PRMetadata, description, dif
 
 func (p *PRAnalyzer) extractLearningPoints(analysis *PRAnalysis) []string {
 	points := []string{}
-	
+
 	// Technical learning points
 	if strings.Contains(analysis.DiffPatch, "exec.Command") {
 		points = append(points, "💡 External command execution in Go using exec.CommandContext")
@@ -351,7 +351,7 @@ func (p *PRAnalyzer) extractLearningPoints(analysis *PRAnalysis) []string {
 	if strings.Contains(analysis.DiffPatch, "gh pr list") {
 		points = append(points, "💡 GitHub CLI integration for PR management")
 	}
-	
+
 	// Add general learning points
 	if analysis.TechnicalAnalysis.TestCoverage == "Good - Tests included with implementation" {
 		points = append(points, "💡 Test-driven development with comprehensive test coverage")
@@ -362,31 +362,31 @@ func (p *PRAnalyzer) extractLearningPoints(analysis *PRAnalysis) []string {
 
 func (p *PRAnalyzer) generateActionItems(analysis *PRAnalysis) []string {
 	items := []string{}
-	
+
 	if analysis.Metadata.State == "OPEN" {
 		items = append(items, "📋 PR is still open - monitor for review feedback")
 	}
-	
+
 	if analysis.TechnicalAnalysis.TestCoverage == "⚠️ No tests found - consider adding test coverage" {
 		items = append(items, "📋 Add test coverage for better code quality")
 	}
-	
+
 	if analysis.TechnicalAnalysis.Complexity == "High" {
 		items = append(items, "📋 Consider breaking down complex changes into smaller PRs")
 	}
-	
+
 	// Always add follow-up items
 	items = append(items, "📋 Monitor CI/CD pipeline results")
 	items = append(items, "📋 Review and address any reviewer feedback")
-	
+
 	return items
 }
 
 func (p *PRAnalyzer) displayPRAnalysis(analysis *PRAnalysis) {
 	fmt.Printf("🔗 **%s** | %s\n", analysis.Metadata.Title, analysis.Metadata.URL)
-	fmt.Printf("📂 Repository: %s | PR #%d | Status: %s\n", 
+	fmt.Printf("📂 Repository: %s | PR #%d | Status: %s\n",
 		analysis.Metadata.Repository, analysis.Metadata.Number, analysis.Metadata.State)
-	fmt.Printf("👤 Author: %s | Created: %s\n\n", 
+	fmt.Printf("👤 Author: %s | Created: %s\n\n",
 		analysis.Metadata.Author, analysis.Metadata.CreatedAt[:10])
 
 	// Technical Analysis
@@ -395,7 +395,7 @@ func (p *PRAnalyzer) displayPRAnalysis(analysis *PRAnalysis) {
 	for _, file := range analysis.TechnicalAnalysis.FilesChanged {
 		fmt.Printf("      • %s\n", file)
 	}
-	fmt.Printf("   📊 Changes: +%d/-%d lines | Complexity: %s\n", 
+	fmt.Printf("   📊 Changes: +%d/-%d lines | Complexity: %s\n",
 		analysis.TechnicalAnalysis.LinesAdded, analysis.TechnicalAnalysis.LinesRemoved, analysis.TechnicalAnalysis.Complexity)
 	fmt.Printf("   🧪 Test Coverage: %s\n\n", analysis.TechnicalAnalysis.TestCoverage)
 

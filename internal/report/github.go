@@ -28,9 +28,9 @@ type Repository struct {
 }
 
 type Settings struct {
-	IncludePrivate  bool     `json:"include_private"`
-	MaxRepos        int      `json:"max_repos"`
-	IncludePeriods  []string `json:"include_periods"`
+	IncludePrivate bool     `json:"include_private"`
+	MaxRepos       int      `json:"max_repos"`
+	IncludePeriods []string `json:"include_periods"`
 }
 
 type PRInfo struct {
@@ -43,7 +43,7 @@ type PRInfo struct {
 	Author    struct {
 		Login string `json:"login"`
 	} `json:"author"`
-	Body      string `json:"body"`
+	Body string `json:"body"`
 }
 
 type WorkSummary struct {
@@ -70,15 +70,15 @@ type Comment struct {
 }
 
 type ReviewComment struct {
-	ID          int    `json:"id"`
-	Author      string `json:"author"`
-	Body        string `json:"body"`
-	Path        string `json:"path"`
-	Line        int    `json:"line"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	DiffHunk    string `json:"diff_hunk"`
-	URL         string `json:"url"`
+	ID        int    `json:"id"`
+	Author    string `json:"author"`
+	Body      string `json:"body"`
+	Path      string `json:"path"`
+	Line      int    `json:"line"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+	DiffHunk  string `json:"diff_hunk"`
+	URL       string `json:"url"`
 }
 
 type PRConversation struct {
@@ -137,13 +137,7 @@ func (g *GitHubCollector) collectWorkForTime(targetTime time.Time) error {
 		return err
 	}
 
-	// Create work summary directory
-	workDir, err := g.createWorkDirectory(targetTime)
-	if err != nil {
-		return err
-	}
-
-	// Collect data
+	// Collect data first before creating directories
 	summary := WorkSummary{
 		Date: targetDate,
 	}
@@ -166,6 +160,18 @@ func (g *GitHubCollector) collectWorkForTime(targetTime time.Time) error {
 		summary.UpdatedPRs = updatedPRs
 	}
 
+	// Check if we have any work to save
+	if len(summary.CreatedPRs) == 0 && len(summary.UpdatedPRs) == 0 {
+		fmt.Printf("No GitHub work found for %s. No directory created.\n", targetDate)
+		return nil
+	}
+
+	// Create work summary directory only if we have data
+	workDir, err := g.createWorkDirectory(targetTime)
+	if err != nil {
+		return err
+	}
+
 	// Get diffs for all relevant PRs
 	allPRs := append(summary.CreatedPRs, summary.UpdatedPRs...)
 	for _, pr := range allPRs {
@@ -179,7 +185,7 @@ func (g *GitHubCollector) collectWorkForTime(targetTime time.Time) error {
 			Title:    pr.Title,
 			Diff:     diff,
 		})
-		
+
 		// Get conversation history for this PR
 		conversation, err := g.getPRConversation(pr.Number, pr.URL)
 		if err != nil {
@@ -299,7 +305,7 @@ func (g *GitHubCollector) getUserRepositories() ([]string, error) {
 		for _, repo := range g.Config.Repositories {
 			repoNames = append(repoNames, fmt.Sprintf("%s/%s", repo.Owner, repo.Repo))
 		}
-		
+
 		// Add organization repositories if configured
 		for _, org := range g.Config.Organizations {
 			orgRepos, err := g.getOrgRepositories(org)
@@ -309,7 +315,7 @@ func (g *GitHubCollector) getUserRepositories() ([]string, error) {
 			}
 			repoNames = append(repoNames, orgRepos...)
 		}
-		
+
 		if len(repoNames) > 0 {
 			return repoNames, nil
 		}
@@ -365,9 +371,9 @@ func (g *GitHubCollector) getPRDiff(prNumber int, repoURL string) (string, error
 	if len(parts) < 2 {
 		return "", fmt.Errorf("invalid PR URL: %s", repoURL)
 	}
-	
+
 	repo := fmt.Sprintf("%s/%s", parts[len(parts)-4], parts[len(parts)-3])
-	
+
 	cmd := exec.Command("gh", "pr", "diff", fmt.Sprintf("%d", prNumber), "--repo", repo)
 	output, err := cmd.Output()
 	if err != nil {
@@ -383,13 +389,13 @@ func (g *GitHubCollector) getPRConversation(prNumber int, repoURL string) (PRCon
 	if len(parts) < 2 {
 		return PRConversation{}, fmt.Errorf("invalid PR URL: %s", repoURL)
 	}
-	
+
 	repo := fmt.Sprintf("%s/%s", parts[len(parts)-4], parts[len(parts)-3])
-	
+
 	conversation := PRConversation{
 		PRNumber: prNumber,
 	}
-	
+
 	// Get PR comments (general comments)
 	comments, err := g.getPRComments(prNumber, repo)
 	if err != nil {
@@ -397,7 +403,7 @@ func (g *GitHubCollector) getPRConversation(prNumber int, repoURL string) (PRCon
 	} else {
 		conversation.Comments = comments
 	}
-	
+
 	// Get review comments (line-specific comments)
 	reviewComments, err := g.getPRReviewComments(prNumber, repo)
 	if err != nil {
@@ -405,34 +411,34 @@ func (g *GitHubCollector) getPRConversation(prNumber int, repoURL string) (PRCon
 	} else {
 		conversation.ReviewComments = reviewComments
 	}
-	
+
 	return conversation, nil
 }
 
 func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, error) {
-	cmd := exec.Command("gh", "pr", "view", fmt.Sprintf("%d", prNumber), "--repo", repo, 
+	cmd := exec.Command("gh", "pr", "view", fmt.Sprintf("%d", prNumber), "--repo", repo,
 		"--json", "comments", "--jq", ".comments[]")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR comments: %w", err)
 	}
-	
+
 	if strings.TrimSpace(string(output)) == "" {
 		return []Comment{}, nil
 	}
-	
+
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 	var comments []Comment
-	
+
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		
+
 		var rawComment struct {
-			ID        int `json:"id"`
-			Author    struct {
+			ID     int `json:"id"`
+			Author struct {
 				Login string `json:"login"`
 			} `json:"author"`
 			Body      string `json:"body"`
@@ -440,12 +446,12 @@ func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, e
 			UpdatedAt string `json:"updatedAt"`
 			URL       string `json:"url"`
 		}
-		
+
 		if err := json.Unmarshal([]byte(line), &rawComment); err != nil {
 			fmt.Printf("Warning: Failed to parse comment: %v\n", err)
 			continue
 		}
-		
+
 		comments = append(comments, Comment{
 			ID:        rawComment.ID,
 			Author:    rawComment.Author.Login,
@@ -455,7 +461,7 @@ func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, e
 			URL:       rawComment.URL,
 		})
 	}
-	
+
 	return comments, nil
 }
 
@@ -463,27 +469,27 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 	// Get review comments using gh api command
 	cmd := exec.Command("gh", "api", fmt.Sprintf("repos/%s/pulls/%d/comments", repo, prNumber),
 		"--jq", ".[]")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get review comments: %w", err)
 	}
-	
+
 	if strings.TrimSpace(string(output)) == "" {
 		return []ReviewComment{}, nil
 	}
-	
+
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 	var reviewComments []ReviewComment
-	
+
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		
+
 		var rawComment struct {
-			ID       int `json:"id"`
-			User     struct {
+			ID   int `json:"id"`
+			User struct {
 				Login string `json:"login"`
 			} `json:"user"`
 			Body      string `json:"body"`
@@ -494,12 +500,12 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 			DiffHunk  string `json:"diff_hunk"`
 			HTMLURL   string `json:"html_url"`
 		}
-		
+
 		if err := json.Unmarshal([]byte(line), &rawComment); err != nil {
 			fmt.Printf("Warning: Failed to parse review comment: %v\n", err)
 			continue
 		}
-		
+
 		reviewComments = append(reviewComments, ReviewComment{
 			ID:        rawComment.ID,
 			Author:    rawComment.User.Login,
@@ -512,45 +518,45 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 			URL:       rawComment.HTMLURL,
 		})
 	}
-	
+
 	return reviewComments, nil
 }
 
 func (g *GitHubCollector) savePRIndividualFiles(workDir string, summary WorkSummary) error {
 	// Create individual directories for each PR
 	allPRs := append(summary.CreatedPRs, summary.UpdatedPRs...)
-	
+
 	for _, pr := range allPRs {
 		// Extract repository name from URL
 		repoName := g.extractRepoFromURL(pr.URL)
 		prDirName := fmt.Sprintf("pr-%d-%s", pr.Number, repoName)
 		prDir := filepath.Join(workDir, prDirName)
-		
+
 		if err := os.MkdirAll(prDir, 0755); err != nil {
 			return fmt.Errorf("failed to create PR directory %s: %w", prDir, err)
 		}
-		
+
 		// Save metadata
 		if err := g.savePRMetadata(prDir, pr); err != nil {
 			return fmt.Errorf("failed to save metadata for PR #%d: %w", pr.Number, err)
 		}
-		
+
 		// Save description
 		if err := g.savePRDescription(prDir, pr); err != nil {
 			return fmt.Errorf("failed to save description for PR #%d: %w", pr.Number, err)
 		}
-		
+
 		// Save diff if available
 		if err := g.savePRDiff(prDir, pr, summary.PRDiffs); err != nil {
 			return fmt.Errorf("failed to save diff for PR #%d: %w", pr.Number, err)
 		}
-		
+
 		// Save conversation history if available
 		if err := g.savePRConversation(prDir, pr, summary.Conversations); err != nil {
 			return fmt.Errorf("failed to save conversation for PR #%d: %w", pr.Number, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -564,7 +570,7 @@ func (g *GitHubCollector) extractRepoFromURL(url string) string {
 
 func (g *GitHubCollector) savePRMetadata(prDir string, pr PRInfo) error {
 	metadataFile := filepath.Join(prDir, "metadata.json")
-	
+
 	metadata := map[string]interface{}{
 		"number":     pr.Number,
 		"title":      pr.Title,
@@ -575,22 +581,22 @@ func (g *GitHubCollector) savePRMetadata(prDir string, pr PRInfo) error {
 		"updated_at": pr.UpdatedAt,
 		"repository": g.extractRepoFromURL(pr.URL),
 	}
-	
+
 	data, err := json.MarshalIndent(metadata, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
-	
+
 	if err := os.WriteFile(metadataFile, data, 0644); err != nil {
 		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
-	
+
 	return nil
 }
 
 func (g *GitHubCollector) savePRDescription(prDir string, pr PRInfo) error {
 	descFile := filepath.Join(prDir, "description.md")
-	
+
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("# PR #%d: %s\n\n", pr.Number, pr.Title))
 	content.WriteString(fmt.Sprintf("**Repository**: %s\n", g.extractRepoFromURL(pr.URL)))
@@ -599,17 +605,17 @@ func (g *GitHubCollector) savePRDescription(prDir string, pr PRInfo) error {
 	content.WriteString(fmt.Sprintf("**Created**: %s\n", pr.CreatedAt))
 	content.WriteString(fmt.Sprintf("**Updated**: %s\n", pr.UpdatedAt))
 	content.WriteString(fmt.Sprintf("**URL**: %s\n\n", pr.URL))
-	
+
 	if pr.Body != "" {
 		content.WriteString("## Description\n\n")
 		content.WriteString(pr.Body)
 		content.WriteString("\n\n")
 	}
-	
+
 	if err := os.WriteFile(descFile, []byte(content.String()), 0644); err != nil {
 		return fmt.Errorf("failed to write description file: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -622,19 +628,19 @@ func (g *GitHubCollector) savePRDiff(prDir string, pr PRInfo, diffs []PRDiff) er
 			break
 		}
 	}
-	
+
 	if prDiff == "" {
 		// Create a placeholder file indicating no diff available
 		placeholderFile := filepath.Join(prDir, "diff-unavailable.txt")
 		content := fmt.Sprintf("Diff not available for PR #%d\nThis could be due to permissions or the PR may not have changes.", pr.Number)
 		return os.WriteFile(placeholderFile, []byte(content), 0644)
 	}
-	
+
 	diffFile := filepath.Join(prDir, "diff.patch")
 	if err := os.WriteFile(diffFile, []byte(prDiff), 0644); err != nil {
 		return fmt.Errorf("failed to write diff file: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -649,39 +655,39 @@ func (g *GitHubCollector) savePRConversation(prDir string, pr PRInfo, conversati
 			break
 		}
 	}
-	
+
 	if !found {
 		// Create a placeholder file indicating no conversation available
 		placeholderFile := filepath.Join(prDir, "conversation-unavailable.txt")
 		content := fmt.Sprintf("Conversation not available for PR #%d\nThis could be due to permissions or no comments exist.", pr.Number)
 		return os.WriteFile(placeholderFile, []byte(content), 0644)
 	}
-	
+
 	// Save structured conversation data as JSON
 	conversationFile := filepath.Join(prDir, "conversation.json")
 	data, err := json.MarshalIndent(prConversation, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal conversation: %w", err)
 	}
-	
+
 	if err := os.WriteFile(conversationFile, data, 0644); err != nil {
 		return fmt.Errorf("failed to write conversation file: %w", err)
 	}
-	
+
 	// Save human-readable conversation
 	if err := g.saveReadableConversation(prDir, prConversation); err != nil {
 		return fmt.Errorf("failed to save readable conversation: %w", err)
 	}
-	
+
 	return nil
 }
 
 func (g *GitHubCollector) saveReadableConversation(prDir string, conversation PRConversation) error {
 	conversationFile := filepath.Join(prDir, "conversation.md")
-	
+
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("# Conversation History - PR #%d\n\n", conversation.PRNumber))
-	
+
 	// General comments
 	if len(conversation.Comments) > 0 {
 		content.WriteString("## General Comments\n\n")
@@ -699,7 +705,7 @@ func (g *GitHubCollector) saveReadableConversation(prDir string, conversation PR
 	} else {
 		content.WriteString("## General Comments\n\nNo general comments found.\n\n")
 	}
-	
+
 	// Review comments (line-specific)
 	if len(conversation.ReviewComments) > 0 {
 		content.WriteString("## Review Comments (Code-specific)\n\n")
@@ -711,14 +717,14 @@ func (g *GitHubCollector) saveReadableConversation(prDir string, conversation PR
 				content.WriteString(fmt.Sprintf("**Updated**: %s\n", comment.UpdatedAt))
 			}
 			content.WriteString(fmt.Sprintf("**URL**: %s\n\n", comment.URL))
-			
+
 			if comment.DiffHunk != "" {
 				content.WriteString("**Code Context**:\n")
 				content.WriteString("```diff\n")
 				content.WriteString(comment.DiffHunk)
 				content.WriteString("\n```\n\n")
 			}
-			
+
 			content.WriteString("**Comment**:\n")
 			content.WriteString(comment.Body)
 			content.WriteString("\n\n---\n\n")
@@ -726,11 +732,11 @@ func (g *GitHubCollector) saveReadableConversation(prDir string, conversation PR
 	} else {
 		content.WriteString("## Review Comments (Code-specific)\n\nNo review comments found.\n\n")
 	}
-	
+
 	if err := os.WriteFile(conversationFile, []byte(content.String()), 0644); err != nil {
 		return fmt.Errorf("failed to write conversation file: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -754,7 +760,7 @@ func (g *GitHubCollector) saveReadableSummary(workDir string, summary WorkSummar
 
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("# GitHub Work Summary - %s\n\n", summary.Date))
-	
+
 	// Overview section for AI context
 	content.WriteString("## Overview\n\n")
 	content.WriteString(fmt.Sprintf("- **Total PRs Created**: %d\n", len(summary.CreatedPRs)))

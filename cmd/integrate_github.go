@@ -30,7 +30,7 @@ Uses today's date if no date is provided.`,
 		}
 
 		fmt.Printf("✅ GitHub work integrated for %s\n", date)
-		fmt.Printf("📁 Report location: reports/%s/%s/daily-report.md\n", 
+		fmt.Printf("📁 Report location: reports/%s/%s/daily-report.md\n",
 			date[:4], date)
 
 		return nil
