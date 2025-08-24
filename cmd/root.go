@@ -19,9 +19,7 @@ func Execute() error {
 
 func init() {
 	rootCmd.AddCommand(createCmd)
-	rootCmd.AddCommand(fetchGithubActivityCmd)
 	rootCmd.AddCommand(generateCmd)
-	rootCmd.AddCommand(prCmd)
 	rootCmd.AddCommand(integrateManualCmd)
 	rootCmd.AddCommand(integrateGithubCmd)
 }

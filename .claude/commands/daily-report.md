@@ -24,22 +24,17 @@ allowed-tools: Bash(*), Read(*), LS(*), Write(*)
 
 ## 実行内容
 
-### 完全自動ワークフロー
+1. **`go run main.go create [date]`**
 
-1. **日報テンプレート作成**: `go run main.go create`
-   - 基本的な日報テンプレートを生成
-2. **GitHub 作業収集・分析**: `/github-work collect`
-   - GitHub からデータ収集
+   - 日報テンプレート作成
+   - GitHub 作業収集・分析
    - 全 PR 詳細分析
-   - 統合分析と学習ポイント抽出
-3. **個別 PR 詳細分析**: `/pr` (全 PR を対象)
-   - 各 PR の包括的な技術・ビジネス分析
-   - レビューコメントと議論の整理
-   - 学習機会と改善点の特定
-4. **日報統合生成**:
-   - テンプレート + GitHub 作業分析 + PR 詳細分析を統合.
-   - 「学んだこと・気づき」　については、GitHub でレビュワーからもらったコメントの中をまず優先して確認すること。
-   - すでに手順 1 で作成している`reports/YYYY/YYYY-MM-DD/daily-report.md` を編集する形で包括的な日本語日報を保存する。
+   - 統合分析と学習ポイント抽出を一括実行
+
+2. **1 で生成された成果物の内容をまとめ、日報として`daily-report.md`に反映する**
+   - 日報は以下「生成される日報構造」に従ってまとめること。
+   - 過度な予測はせず、事実に基づいて内容をまとめること。
+   - 学んだこと、気づきは、「conversation.json」「conversation.md」の内容を優先的に参照し、有意義なものがあれば積極的に取り入れること。
 
 ## 生成される日報構造
 
@@ -56,13 +51,14 @@ allowed-tools: Bash(*), Read(*), LS(*), Write(*)
 - 実装した機能の詳細
 - コード変更の技術的分析
 - アーキテクチャ上の判断
+- **PR ごとにまとめること**
 
 ## 学んだこと・気づき
 
 - PR 分析から抽出された学習ポイント
 - レビューフィードバックから得た知見
 - 技術的な発見と改善点
-- GitHub でレビュワーからもらったコメントの中をまず優先して確認すること。
+- **GitHub でレビュワーからもらったコメントの中をまず優先して確認すること。**
 
 ## 直面した課題と解決策
 
@@ -81,13 +77,13 @@ allowed-tools: Bash(*), Read(*), LS(*), Write(*)
 
 ```bash
 # 今日の日報を完全自動生成
-/daily-report
+go run main.go create
 
 # 特定日の日報を生成
-/daily-report 2025-08-23
+go run main.go create 2025-08-23
 
 # 過去の日付で再生成
-/daily-report 2025-08-20
+go run main.go create 2025-08-20
 ```
 
 ## 処理時間
@@ -109,3 +105,16 @@ allowed-tools: Bash(*), Read(*), LS(*), Write(*)
 - `reports/YYYY/YYYY-MM-DD/github-work/pr-*/` - 個別 PR 分析
 
 実行日付: $ARGUMENTS
+
+## 統合コマンド実行
+
+```bash
+# 統合された日報作成コマンドを実行
+if [ -z "$ARGUMENTS" ]; then
+    # 引数なしの場合は今日の日付で実行
+    go run main.go create
+else
+    # 引数ありの場合は指定された日付で実行
+    go run main.go create "$ARGUMENTS"
+fi
+```
