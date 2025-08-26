@@ -13,8 +13,8 @@ import (
 
 var createCmd = &Command{
 	Name:  "create",
-	Short: "Create a new daily report with GitHub work analysis",
-	Long:  "Create a new daily report markdown file in the reports directory organized by year and date. Automatically collects GitHub activity and performs PR analysis. Accepts date in YYYY-MM-DD format, uses today's date if not provided.",
+	Short: "Create a new daily report",
+	Long:  "Create a new daily report markdown file in the reports directory organized by year and date. Accepts date in YYYY-MM-DD format, uses today's date if not provided.",
 	Run: func(cmd *Command, args []string) error {
 		date := time.Now().Format("2006-01-02")
 		if len(args) > 0 {
@@ -35,40 +35,9 @@ var createCmd = &Command{
 			return fmt.Errorf("failed to create daily report: %v", err)
 		}
 
-		// Collect GitHub activity
-		fmt.Printf("🔍 Collecting GitHub activity...\n")
-		collector := report.NewGitHubCollector(".")
-		if len(args) > 0 {
-			err = collector.CollectWorkForDate(args[0])
-		} else {
-			err = collector.CollectTodaysWork()
-		}
-		if err != nil {
-			fmt.Printf("⚠️ GitHub activity collection failed: %v\n", err)
-			fmt.Printf("📝 Daily report created without GitHub analysis\n")
-			return nil
-		}
-
-		// Perform PR analysis
-		fmt.Printf("🔬 Analyzing PRs...\n")
-		analyzer := NewPRAnalyzer(".")
-		err = analyzer.AnalyzeTodaysPRs(date)
-		if err != nil {
-			fmt.Printf("⚠️ PR analysis failed: %v\n", err)
-			fmt.Printf("📝 Daily report created with GitHub activity only\n")
-			return nil
-		}
-
-		// Integrate analysis results into daily report using Claude Code
-		fmt.Printf("📝 Integrating analysis into daily report using Claude Code...\n")
-		err = analyzer.IntegrateAnalysisUsingClaude(date)
-		if err != nil {
-			fmt.Printf("⚠️ Failed to integrate analysis into report: %v\n", err)
-			fmt.Printf("📝 Analysis completed but not integrated into daily report\n")
-			return nil
-		}
-
-		fmt.Printf("✅ Daily report with complete analysis created successfully!\n")
+		fmt.Printf("✅ Daily report created successfully!\n")
+		fmt.Printf("💡 Run 'go run main.go fetch-github-activity %s' to collect GitHub activity\n", date)
+		fmt.Printf("💡 Run 'go run main.go fetch-slack-activity %s' to collect Slack activity\n", date)
 		return nil
 	},
 }
@@ -430,7 +399,7 @@ func (p *PRAnalyzer) IntegrateAnalysisUsingClaude(date string) error {
 	year := date[:4]
 	reportPath := filepath.Join(p.basePath, "reports", year, date, "daily-report.md")
 	githubWorkDir := filepath.Join(p.basePath, "reports", year, date, "github-work")
-	
+
 	// Check if both files exist
 	if _, err := os.Stat(reportPath); os.IsNotExist(err) {
 		return fmt.Errorf("daily report file not found: %s", reportPath)
@@ -438,11 +407,11 @@ func (p *PRAnalyzer) IntegrateAnalysisUsingClaude(date string) error {
 	if _, err := os.Stat(githubWorkDir); os.IsNotExist(err) {
 		return fmt.Errorf("GitHub work directory not found: %s", githubWorkDir)
 	}
-	
+
 	fmt.Printf("🤖 Starting Claude Code integration process...\n")
 	fmt.Printf("📄 Report file: %s\n", reportPath)
 	fmt.Printf("📁 GitHub work dir: %s\n", githubWorkDir)
-	
+
 	return nil
 }
 
@@ -507,4 +476,3 @@ func (p *PRAnalyzer) displayPRAnalysis(analysis *PRAnalysis) {
 		fmt.Printf("\n")
 	}
 }
-

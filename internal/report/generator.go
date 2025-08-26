@@ -35,16 +35,12 @@ func (g *Generator) createDailyReportForTime(targetTime time.Time) error {
 	year := fmt.Sprintf("%d", targetTime.Year())
 	date := targetTime.Format("2006-01-02")
 
-	// Create directory structure: reports/2024/2024-01-15
 	reportDir := filepath.Join(g.BaseDir, "reports", year, date)
 	if err := os.MkdirAll(reportDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", reportDir, err)
 	}
 
-	// Create markdown file: daily-report.md
 	reportFile := filepath.Join(reportDir, "daily-report.md")
-
-	// Check if file already exists
 	if _, err := os.Stat(reportFile); err == nil {
 		fmt.Printf("Daily report already exists: %s\n", reportFile)
 		return nil
@@ -56,7 +52,6 @@ func (g *Generator) createDailyReportForTime(targetTime time.Time) error {
 		return fmt.Errorf("failed to write report file %s: %w", reportFile, err)
 	}
 
-	// Create manual-draft.md file
 	manualDraftFile := filepath.Join(reportDir, "manual-draft.md")
 	if _, err := os.Stat(manualDraftFile); os.IsNotExist(err) {
 		manualDraftContent := g.generateManualDraftTemplate(targetTime)
@@ -76,20 +71,29 @@ func (g *Generator) generateReportTemplate(date time.Time) string {
 
 	return fmt.Sprintf(`# 日報 - %s (%s曜日)
 
-## GitHub作業
+## 今日の主な成果
+
+- 
+
+## 技術的な作業内容
+
+### GitHub作業
 
 <!-- GitHub作業はここに自動的に挿入されます -->
-
-## その他の作業
-
 
 ## 学んだこと・気づき
 
 - 
 
+## 直面した課題と解決策
+
+- 
+
+## その他の作業
+
 ## 明日以降の予定
 
-- [ ] 
+- 
 
 `, dateStr, weekday)
 }
@@ -122,27 +126,21 @@ func (g *Generator) IntegrateGitHubWork(dateStr string) error {
 		return nil
 	}
 
-	// Read current report content
 	content, err := os.ReadFile(reportFile)
 	if err != nil {
 		return fmt.Errorf("failed to read report file: %w", err)
 	}
-
-	// Generate GitHub work content
 	githubContent, err := g.generateGitHubWorkContent(githubWorkDir)
 	if err != nil {
 		return fmt.Errorf("failed to generate GitHub work content: %w", err)
 	}
 
-	// Replace the placeholder with actual content
 	updatedContent := strings.Replace(
 		string(content),
 		"<!-- GitHub作業はここに自動的に挿入されます -->",
 		githubContent,
 		1,
 	)
-
-	// Write updated content back to file
 	if err := os.WriteFile(reportFile, []byte(updatedContent), 0644); err != nil {
 		return fmt.Errorf("failed to write updated report file: %w", err)
 	}
@@ -154,7 +152,6 @@ func (g *Generator) IntegrateGitHubWork(dateStr string) error {
 func (g *Generator) generateGitHubWorkContent(githubWorkDir string) (string, error) {
 	var content strings.Builder
 
-	// Read work summary
 	summaryFile := filepath.Join(githubWorkDir, "work-summary.json")
 	var workSummary WorkSummary
 
@@ -166,12 +163,10 @@ func (g *Generator) generateGitHubWorkContent(githubWorkDir string) (string, err
 		return "今日はGitHub作業がありませんでした。", nil
 	}
 
-	// Generate content based on the work summary
 	if len(workSummary.CreatedPRs) == 0 && len(workSummary.UpdatedPRs) == 0 {
 		return "今日はGitHub作業がありませんでした。", nil
 	}
 
-	// Process created PRs
 	if len(workSummary.CreatedPRs) > 0 {
 		content.WriteString("### PR作成\n\n")
 		for _, pr := range workSummary.CreatedPRs {
@@ -184,11 +179,9 @@ func (g *Generator) generateGitHubWorkContent(githubWorkDir string) (string, err
 		}
 	}
 
-	// Process updated PRs
 	if len(workSummary.UpdatedPRs) > 0 {
 		content.WriteString("### PR更新\n\n")
 		for _, pr := range workSummary.UpdatedPRs {
-			// Skip if this PR was also created today (avoid duplication)
 			skip := false
 			for _, createdPR := range workSummary.CreatedPRs {
 				if createdPR.Number == pr.Number {
@@ -229,7 +222,6 @@ func (g *Generator) generatePRContent(githubWorkDir string, pr PRInfo, action st
 		content.WriteString("\n\n")
 	}
 
-	// Add technical insights from diff analysis
 	diffFile := filepath.Join(prDir, "diff.patch")
 	if diffData, err := os.ReadFile(diffFile); err == nil && len(diffData) > 0 {
 		insights := g.analyzeDiffForInsights(string(diffData))
@@ -240,7 +232,6 @@ func (g *Generator) generatePRContent(githubWorkDir string, pr PRInfo, action st
 		}
 	}
 
-	// Add conversation insights
 	conversationFile := filepath.Join(prDir, "conversation.json")
 	if convData, err := os.ReadFile(conversationFile); err == nil {
 		var conversation PRConversation
@@ -288,7 +279,6 @@ func (g *Generator) analyzeDiffForInsights(diff string) string {
 		}
 	}
 
-	// Generate insights
 	if len(modifiedFiles) > 0 {
 		fileList := make([]string, 0, len(modifiedFiles))
 		for file := range modifiedFiles {
@@ -387,7 +377,6 @@ func (g *Generator) analyzeConversationForInsights(conversation PRConversation) 
 	// Analyze general comments
 	for _, comment := range conversation.Comments {
 		if comment.Body != "" {
-			// Look for learning patterns, questions, or technical discussions
 			body := strings.ToLower(comment.Body)
 			if strings.Contains(body, "learn") || strings.Contains(body, "学") {
 				insights = append(insights, "- 学習に関する議論がありました")
@@ -396,7 +385,6 @@ func (g *Generator) analyzeConversationForInsights(conversation PRConversation) 
 		}
 	}
 
-	// Analyze review comments for technical insights
 	hasCodeReview := len(conversation.ReviewComments) > 0
 	if hasCodeReview {
 		insights = append(insights, fmt.Sprintf("- コードレビュー: %d件のコメント", len(conversation.ReviewComments)))

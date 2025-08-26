@@ -61,24 +61,24 @@ type PRDiff struct {
 }
 
 type Comment struct {
-	ID        int    `json:"id"`
-	Author    string `json:"author"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	URL       string `json:"url"`
+	ID        interface{} `json:"id"`
+	Author    string      `json:"author"`
+	Body      string      `json:"body"`
+	CreatedAt string      `json:"created_at"`
+	UpdatedAt string      `json:"updated_at"`
+	URL       string      `json:"url"`
 }
 
 type ReviewComment struct {
-	ID        int    `json:"id"`
-	Author    string `json:"author"`
-	Body      string `json:"body"`
-	Path      string `json:"path"`
-	Line      int    `json:"line"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	DiffHunk  string `json:"diff_hunk"`
-	URL       string `json:"url"`
+	ID        interface{} `json:"id"`
+	Author    string      `json:"author"`
+	Body      string      `json:"body"`
+	Path      string      `json:"path"`
+	Line      int         `json:"line"`
+	CreatedAt string      `json:"created_at"`
+	UpdatedAt string      `json:"updated_at"`
+	DiffHunk  string      `json:"diff_hunk"`
+	URL       string      `json:"url"`
 }
 
 type PRConversation struct {
@@ -437,7 +437,7 @@ func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, e
 		}
 
 		var rawComment struct {
-			ID     int `json:"id"`
+			ID     interface{} `json:"id"`
 			Author struct {
 				Login string `json:"login"`
 			} `json:"author"`
@@ -452,8 +452,18 @@ func (g *GitHubCollector) getPRComments(prNumber int, repo string) ([]Comment, e
 			continue
 		}
 
+		var commentID int
+		switch id := rawComment.ID.(type) {
+		case int:
+			commentID = id
+		case float64:
+			commentID = int(id)
+		default:
+			commentID = 0
+		}
+
 		comments = append(comments, Comment{
-			ID:        rawComment.ID,
+			ID:        commentID,
 			Author:    rawComment.Author.Login,
 			Body:      rawComment.Body,
 			CreatedAt: rawComment.CreatedAt,
@@ -488,7 +498,7 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 		}
 
 		var rawComment struct {
-			ID   int `json:"id"`
+			ID   interface{} `json:"id"`
 			User struct {
 				Login string `json:"login"`
 			} `json:"user"`
@@ -506,8 +516,18 @@ func (g *GitHubCollector) getPRReviewComments(prNumber int, repo string) ([]Revi
 			continue
 		}
 
+		var reviewCommentID int
+		switch id := rawComment.ID.(type) {
+		case int:
+			reviewCommentID = id
+		case float64:
+			reviewCommentID = int(id)
+		default:
+			reviewCommentID = 0
+		}
+
 		reviewComments = append(reviewComments, ReviewComment{
-			ID:        rawComment.ID,
+			ID:        reviewCommentID,
 			Author:    rawComment.User.Login,
 			Body:      rawComment.Body,
 			Path:      rawComment.Path,

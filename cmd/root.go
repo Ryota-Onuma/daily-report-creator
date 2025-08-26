@@ -22,6 +22,9 @@ func init() {
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(integrateManualCmd)
 	rootCmd.AddCommand(integrateGithubCmd)
+	rootCmd.AddCommand(fetchSlackActivityCmd)
+	rootCmd.AddCommand(fetchGithubActivityCmd)
+	rootCmd.AddCommand(orchestrateCmd)
 }
 
 type Command struct {

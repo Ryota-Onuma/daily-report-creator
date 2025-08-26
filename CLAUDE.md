@@ -4,15 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-- **Build the application**: `go build -o daily-report-creator`
-- **Run the application**: `go run main.go [command]`
-- **Create daily report**: `go run main.go create`
-- **Collect GitHub work summary**: `go run main.go fetch-github-activity`
-- **Generate comprehensive report**: `go run main.go generate`
-- **Integrate manual work**: `go run main.go integrate-manual`
-- **Show help**: `go run main.go help`
-- **Run tests**: `go test ./...`
-- **Format code**: `go fmt ./...`
+- **Build**: `go build -o daily-report-creator`
+- **Run**: `go run main.go [command]`
+- **Tests**: `go test ./...`
+- **Format**: `go fmt ./...`
+
+Daily-report command usage is organized in `.claude/commands/daily-report.md`.
+Platform-specific details live in `.claude/agents/github-client.md` and `.claude/agents/slack-client.md`.
 
 ## Project Structure
 
@@ -35,17 +33,20 @@ This is a Go CLI application for creating daily reports:
 - Custom lightweight CLI framework in `cmd/root.go` for extensibility
 - Commands are easily extensible by adding new files in `cmd/` package
 - Report generation creates directory structure: `reports/YEAR/YYYY-MM-DD/daily-report.md`
-- GitHub integration creates work summaries in: `reports/YEAR/YYYY-MM-DD/github-work/`
+- Integration outputs:
+  - GitHub: `reports/YEAR/YYYY-MM-DD/github-work/`
+  - Slack: `reports/YEAR/YYYY-MM-DD/slack-work/`
 - Uses Go standard library only (no external dependencies)
 - Japanese template format for daily reports
 - Prevents duplicate report creation for the same date
-- GitHub CLI (`gh`) required for work summary collection
+- For platform-specific requirements, see `.claude/agents/*`
 
 ## Report Structure
 
-Daily reports now organize content by PR with minimal speculation:
+Daily reports now organize content by platform with minimal speculation:
 
 - **GitHub作業**: PR-based sections with actual implementation details
+- **Slack作業**: Channel-based activity summaries with message analysis
 - **その他の作業**: Manual work input area with comment-based parsing
 - **学んだこと・気づき**: Learning points from actual work
 - **明日以降の予定**: Action items and follow-ups
@@ -56,3 +57,9 @@ Users can add manual work by:
 1. Editing daily report file
 2. Adding content in the HTML comment section under "その他の作業"
 3. Running `go run main.go integrate-manual` to process and integrate content
+
+## Further Reading
+
+- Daily report commands: `.claude/commands/daily-report.md`
+- GitHub client: `.claude/agents/github-client.md`
+- Slack client: `.claude/agents/slack-client.md`
